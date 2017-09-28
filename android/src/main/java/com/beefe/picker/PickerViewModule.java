@@ -2,17 +2,24 @@ package com.beefe.picker;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.beefe.picker.view.FixedPopupWindow;
 import com.beefe.picker.view.OnSelectedListener;
 import com.beefe.picker.view.PickerViewAlone;
 import com.beefe.picker.view.PickerViewLinkage;
@@ -109,6 +116,8 @@ public class PickerViewModule extends ReactContextBaseJavaModule implements Life
     private static final String ERROR_NOT_INIT = "please initialize the component first";
 
     private Dialog dialog = null;
+    private PopupWindow popupWindow = null;
+    private View mParentView = null;
 
     private boolean isLoop = true;
 
@@ -139,7 +148,17 @@ public class PickerViewModule extends ReactContextBaseJavaModule implements Life
     public void _init(ReadableMap options) {
         Activity activity = getCurrentActivity();
         if (activity != null && options.hasKey(PICKER_DATA)) {
+            if (mParentView == null) {
+                mParentView = activity.getWindow().getDecorView();
+            }
             View view = activity.getLayoutInflater().inflate(R.layout.picker_view, null);
+            View other =  view.findViewById(R.id.other);
+            other.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    hide();//点击其他地方消失
+                }
+            });
             RelativeLayout barLayout = (RelativeLayout) view.findViewById(R.id.barLayout);
             TextView cancelTV = (TextView) view.findViewById(R.id.cancel);
             TextView titleTV = (TextView) view.findViewById(R.id.title);
@@ -158,7 +177,7 @@ public class PickerViewModule extends ReactContextBaseJavaModule implements Life
             } else {
                 barViewHeight = (int) (activity.getResources().getDisplayMetrics().density * 40);
             }
-            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                     RelativeLayout.LayoutParams.MATCH_PARENT,
                     barViewHeight);
             barLayout.setLayoutParams(params);
@@ -166,7 +185,8 @@ public class PickerViewModule extends ReactContextBaseJavaModule implements Life
             if (options.hasKey(PICKER_TOOL_BAR_BG)) {
                 ReadableArray array = options.getArray(PICKER_TOOL_BAR_BG);
                 int[] colors = getColor(array);
-                barLayout.setBackgroundColor(argb(colors[3], colors[0], colors[1], colors[2]));
+                Log.i("PICKER_TOOL_BAR_BG",""+colors[3]+" "+colors[0]+" "+colors[1]+" "+colors[2]);
+//                barLayout.setBackgroundColor(Color.argb(colors[3], colors[0], colors[1], colors[2]));
             }
 
             if (options.hasKey(PICKER_TOOL_BAR_TEXT_SIZE)) {
@@ -184,7 +204,7 @@ public class PickerViewModule extends ReactContextBaseJavaModule implements Life
             if (options.hasKey(PICKER_CONFIRM_BTN_COLOR)) {
                 ReadableArray array = options.getArray(PICKER_CONFIRM_BTN_COLOR);
                 int[] colors = getColor(array);
-                confirmTV.setTextColor(argb(colors[3], colors[0], colors[1], colors[2]));
+//                confirmTV.setTextColor(argb(colors[3], colors[0], colors[1], colors[2]));
             }
             confirmTV.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -210,7 +230,7 @@ public class PickerViewModule extends ReactContextBaseJavaModule implements Life
             if (options.hasKey(PICKER_TITLE_TEXT_COLOR)) {
                 ReadableArray array = options.getArray(PICKER_TITLE_TEXT_COLOR);
                 int[] colors = getColor(array);
-                titleTV.setTextColor(argb(colors[3], colors[0], colors[1], colors[2]));
+//                titleTV.setTextColor(argb(colors[3], colors[0], colors[1], colors[2]));
             }
 
             if (options.hasKey(PICKER_CANCEL_BTN_TEXT)) {
@@ -220,7 +240,7 @@ public class PickerViewModule extends ReactContextBaseJavaModule implements Life
             if (options.hasKey(PICKER_CANCEL_BTN_COLOR)) {
                 ReadableArray array = options.getArray(PICKER_CANCEL_BTN_COLOR);
                 int[] colors = getColor(array);
-                cancelTV.setTextColor(argb(colors[3], colors[0], colors[1], colors[2]));
+//                cancelTV.setTextColor(argb(colors[3], colors[0], colors[1], colors[2]));
             }
             cancelTV.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -272,7 +292,7 @@ public class PickerViewModule extends ReactContextBaseJavaModule implements Life
             if (options.hasKey(PICKER_TEXT_COLOR)) {
                 ReadableArray array = options.getArray(PICKER_TEXT_COLOR);
                 int[] colors = getColor(array);
-                pickerTextColor = Color.argb(colors[3], colors[0], colors[1], colors[2]);
+//                pickerTextColor = Color.argb(colors[3], colors[0], colors[1], colors[2]);
             }
 
             int pickerTextSize = 16;
@@ -339,28 +359,50 @@ public class PickerViewModule extends ReactContextBaseJavaModule implements Life
             if (options.hasKey(PICKER_BG_COLOR)) {
                 ReadableArray array = options.getArray(PICKER_BG_COLOR);
                 int[] colors = getColor(array);
-                pickerLayout.setBackgroundColor(argb(colors[3], colors[0], colors[1], colors[2]));
+//                pickerLayout.setBackgroundColor(argb(colors[3], colors[0], colors[1], colors[2]));
             }
 
             int height = barViewHeight + pickerViewHeight;
-            if (dialog == null) {
-                dialog = new Dialog(activity, R.style.Dialog_Full_Screen);
-                dialog.setContentView(view);
-                WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
-                Window window = dialog.getWindow();
-                if (window != null) {
-                    layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-                    layoutParams.type = WindowManager.LayoutParams.TYPE_TOAST;
-                    layoutParams.format = PixelFormat.TRANSPARENT;
-                    layoutParams.windowAnimations = R.style.PickerAnim;
-                    layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
-                    layoutParams.height = height;
-                    layoutParams.gravity = Gravity.BOTTOM;
-                    window.setAttributes(layoutParams);
-                }
+// if (dialog == null) {
+// dialog = new Dialog(activity, R.style.Dialog_Full_Screen);
+// dialog.setContentView(view);
+// dialog.setCancelable(true);
+// WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
+// Window window = dialog.getWindow();
+// if (window != null) {
+// layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+// layoutParams.type = WindowManager.LayoutParams.TYPE_TOAST;
+// PackageManager pm = activity.getPackageManager();
+// String packageName = activity.getPackageName();
+// boolean permission = (PackageManager.PERMISSION_GRANTED == pm.checkPermission("android.permission.SYSTEM_ALERT_WINDOW", packageName));
+// if(permission){
+// layoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
+// }else{
+//
+// }
+// layoutParams.type = WindowManager.LayoutParams.TYPE_TOAST;
+// layoutParams.format = PixelFormat.TRANSPARENT;
+// layoutParams.windowAnimations = R.style.PickerAnim;
+// layoutParams.width = WindowManager.LayoutParams.MATCH_PARENT;
+// layoutParams.height = height;
+// layoutParams.gravity = Gravity.BOTTOM;
+// window.setAttributes(layoutParams);
+// }
+// } else {
+// dialog.dismiss();
+// dialog.setContentView(view);
+// }
+            if (popupWindow == null) {
+                WindowManager wm = (WindowManager) activity.getSystemService(Context.WINDOW_SERVICE);
+                int width = wm.getDefaultDisplay().getWidth();
+
+                popupWindow = new FixedPopupWindow(view, width, ViewGroup.LayoutParams.MATCH_PARENT);
+                popupWindow.setAnimationStyle(R.style.PickerAnim);
+                popupWindow.setFocusable(false);
+                popupWindow.setOutsideTouchable(true);
             } else {
-                dialog.dismiss();
-                dialog.setContentView(view);
+                popupWindow.dismiss();
+                popupWindow.setContentView(view);
             }
         }
     }
@@ -379,21 +421,37 @@ public class PickerViewModule extends ReactContextBaseJavaModule implements Life
 
     @ReactMethod
     public void show() {
-        if (dialog == null) {
+// if (dialog == null) {
+// return;
+// }
+// if (!dialog.isShowing()) {
+// dialog.show();
+// }
+        if (popupWindow == null) {
             return;
         }
-        if (!dialog.isShowing()) {
-            dialog.show();
+
+        if (!popupWindow.isShowing()) {
+            popupWindow.showAtLocation(mParentView, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0);
+        } else {
+            popupWindow.update();
         }
     }
 
     @ReactMethod
     public void hide() {
-        if (dialog == null) {
+// if (dialog == null) {
+// return;
+// }
+// if (dialog.isShowing()) {
+// dialog.dismiss();
+// }
+        if (popupWindow == null) {
             return;
         }
-        if (dialog.isShowing()) {
-            dialog.dismiss();
+
+        if (popupWindow.isShowing()) {
+            popupWindow.dismiss();
         }
     }
 
@@ -401,28 +459,35 @@ public class PickerViewModule extends ReactContextBaseJavaModule implements Life
     public void isPickerShow(Callback callback) {
         if (callback == null)
             return;
-        if (dialog == null) {
-            callback.invoke(ERROR_NOT_INIT);
+// if (dialog == null) {
+// callback.invoke(ERROR_NOT_INIT);
+// } else {
+// callback.invoke(null, dialog.isShowing());
+// }
+
+        if (popupWindow == null) {
+            callback.invoke(null, false);
         } else {
-            callback.invoke(null, dialog.isShowing());
+            callback.invoke(null, popupWindow.isShowing());
         }
     }
 
     private int[] getColor(ReadableArray array) {
         int[] colors = new int[4];
         for (int i = 0; i < array.size(); i++) {
-            switch (i) {
-                case 0:
-                case 1:
-                case 2:
-                    colors[i] = array.getInt(i);
-                    break;
-                case 3:
-                    colors[i] = (int) (array.getDouble(i) * 255);
-                    break;
-                default:
-                    break;
-            }
+            colors[i] = array.getInt(i);
+//            switch (i) {
+//                case 0:
+//                case 1:
+//                case 2:
+//                    colors[i] = array.getInt(i);
+//                    break;
+//                case 3:
+//                    colors[i] = (int) (array.getDouble(i) * 255);
+//                    break;
+//                default:
+//                    break;
+//            }
         }
         return colors;
     }
@@ -493,11 +558,13 @@ public class PickerViewModule extends ReactContextBaseJavaModule implements Life
     public void onHostPause() {
         hide();
         dialog = null;
+        popupWindow = null;
     }
 
     @Override
     public void onHostDestroy() {
         hide();
         dialog = null;
+        popupWindow = null;
     }
 }

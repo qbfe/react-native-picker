@@ -1,25 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    android:orientation="vertical"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:background="#00000000">
-
-
+    <View
+        android:id="@+id/other"
+        android:layout_height="0dp"
+        android:layout_width="match_parent"
+        android:layout_weight="1"/>
     <RelativeLayout
         android:id="@+id/barLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="40dp"
+        android:background="#FFFFFFFF"
         android:layout_above="@+id/pickerLayout">
 
         <TextView
             android:id="@+id/cancel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="#5995f5"
             android:layout_centerVertical="true"
             android:padding="9dp" />
 
         <TextView
             android:id="@+id/title"
+            android:textColor="#333333"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
@@ -32,6 +40,7 @@
             android:layout_alignParentEnd="true"
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
+            android:textColor="#5995f5"
             android:padding="9dp" />
 
     </RelativeLayout>
@@ -40,6 +49,7 @@
         android:id="@+id/pickerLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="#f6f8fb"
         android:layout_alignParentBottom="true" >
 
         <com.beefe.picker.view.PickerViewLinkage
@@ -53,4 +63,4 @@
             android:layout_height="wrap_content"/>
     </RelativeLayout>
 
-</RelativeLayout>
+</LinearLayout>
