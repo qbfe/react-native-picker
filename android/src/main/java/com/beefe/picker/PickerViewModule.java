@@ -409,12 +409,18 @@ public class PickerViewModule extends ReactContextBaseJavaModule implements Life
 
     @ReactMethod
     public void select(ReadableArray array, Callback callback) {
-        if (dialog == null) {
+        if (popupWindow == null) {
             if (callback != null) {
                 callback.invoke(ERROR_NOT_INIT);
             }
             return;
         }
+//        if (dialog == null) {
+//            if (callback != null) {
+//                callback.invoke(ERROR_NOT_INIT);
+//            }
+//            return;
+//        }
         String[] selectedValue = getSelectedValue(array);
         select(selectedValue);
     }
